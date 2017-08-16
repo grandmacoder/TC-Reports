@@ -48,6 +48,32 @@ $("#btnsubmitlernwaitlist").click(function(event) {
 		data=data+'&action=tc_report_lern_waitlist';
 		window.open(pluginAjaxURL+'/?'+data,'_blank' );
 });
+$("#btnsubmitlernduplicate").click(function(event) {
+	event.preventDefault();
+        $( "#messageareaduplicate" ).html( "<p style='color:green;font-weight:bold;'>Please wait while the course is copied.</p>" );
+		var baseURL = window.location.protocol+"//"+window.location.host
+		var pluginAjaxURL = baseURL +'/wp-content/plugins/transcoal-reports/tc_reports_ajax.php';
+		var data = $("#LernDuplicate").serialize();
+		data=data+'&action=tc_report_lern_duplicate';
+		$.ajax({
+		type: "POST",
+		url: pluginAjaxURL ,
+		dataType: 'json', 
+		data: data,
+		success: function(response){
+			if (response['success'] == 1){
+				$("#messageareaduplicate").html("<span style='color:#405f15; font-weight:bold;'>You have successfully copied the course. Find it under Training Modules->Training Courses</span>");
+				}
+				 else{
+				$("#messageareaduplicate").html("<span style='color:#405f15; font-weight:bold;'>There was a problem duplicating the course.</span>"); 
+				}
+				},
+				error: function(xhr, textStatus, errorThrown){
+				alert(textStatus + errorThrown);
+				},
+		});//end ajax call   
+	
+});
 
 $("#btnsubmitprepost" ).click(function(event) {
     event.preventDefault();
@@ -178,23 +204,6 @@ $("#btn_submit_satisfactionsurvey" ).click(function(event) {
 		var pluginAjaxURL = baseURL +'/wp-content/plugins/transcoal-reports/tc_reports_ajax.php';
 		var data = $( "#satisfactionSurveyList" ).serialize();
 		data=data+'&action=satisfaction_survey_report_download';
-        window.open(pluginAjaxURL+'/?'+data,'_blank' );
-    }
-});
-$("#btn_submit_lern_satisfactionsurvey" ).click(function(event) {
-	event.preventDefault();
-	var startdate = new Date($("input[name='start_date']").val());
-	var enddate = new  Date($("input[name='end_date']").val());
-	var state = $("#satisfaction_survey_state").val();
-	var modules = $("module_list_data").val();
-    if(startdate > enddate){
-		$( "#messageareasatisfactionsurvey" ).html( "<p style='color:red;font-weight:bold;'>Start Date is not correct. Please choose a start date before end date.</p>" );
-	}else{
-		$( "#messageareasatisfactionsurvey" ).html( "<p style='color:green;font-weight:bold;'>Your file will download momentarily.</p>" );
-		var baseURL = window.location.protocol+"//"+window.location.host
-		var pluginAjaxURL = baseURL +'/wp-content/plugins/transcoal-reports/tc_reports_ajax.php';
-		var data = $( "#satisfactionSurveyList" ).serialize();
-		data=data+'&action=lern_satisfaction_survey_report_download';
         window.open(pluginAjaxURL+'/?'+data,'_blank' );
     }
 });

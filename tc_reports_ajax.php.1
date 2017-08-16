@@ -1,4 +1,8 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 if(!isset($wpdb))
 {
     require_once('../../../wp-config.php');
@@ -10,8 +14,6 @@ $sReturnString="";
 $cboString="";
 $cboStringFinal="";
 /************************************************************************************************************/
-/*GET THE LERN SATISFACTION SURVEY REPORT */
-
 if($_GET['action'] == 'lern_satisfaction_survey_report_download'){
 	global $wpdb;
 	$quiz_id = $_GET['lern_list_data'];
@@ -22,6 +24,7 @@ if($_GET['action'] == 'lern_satisfaction_survey_report_download'){
 	define('LIGHT_GRAY', 41);
 	$workbook->setCustomColor(CUSTOM_GRAY, 152, 152, 152);
 	$workbook->setCustomColor(LIGHT_GRAY, 221, 221, 221);
+	$workbook->setVersion(8); // Use Excel97/2000 Format
     $format_header_left =& $workbook->addFormat();
 	$format_header_left =& $workbook->addFormat(
 		array(	'Bold'		=> 1,
@@ -287,30 +290,38 @@ array_push($aQuestions,$question->description);
 }
 
 // set column widths
+    $worksheet->setColumn(1,1,20); // Name of User
     $worksheet->setColumn(1,1,20); // Q1
 	$worksheet->setColumn(1,1,20); // Score 1
 	$worksheet->setColumn(1,1,20); // Q2
 	$worksheet->setColumn(1,1,20); // Score 2
 // build the header row
 	$col = 0;
+	$worksheet->write(1, $col++, "Name", $format_header_left);
     $worksheet->write(1, $col++, "Q1 Answer", $format_header_left);
 	$worksheet->write(1, $col++, "Self Score Q1", $format_header_left);
     $worksheet->write(1, $col++, "Q2 Answer", $format_header_left);
 	$worksheet->write(1, $col++, "Self Score Q2", $format_header_left);
 	$row = 2;
 	//get the answers from the activities table
-	$activities =$wpdb->get_results("select * from wp_course_activities where post_id in  (select unit_id from wp_wpcw_units_meta m, wp_posts p where p.ID = m.unit_id and parent_course_id = ". $course_id ." and post_title like '%engage%')
-order by user_id, page_order", OBJECT);
+	$activities =$wpdb->get_results("select page_order, activity_value, description, selfgrade, display_name
+			from wp_course_activities a, wp_users u
+			where  a.user_id = u.id and post_id 
+			in (select unit_id from wp_wpcw_units_meta m, wp_posts p where p.ID = m.unit_id and parent_course_id = ". $course_id ." and post_title like '%engage%')
+			order by user_id, page_order", OBJECT);
 $col =0;	
 	foreach ($activities as $activity){
-        $worksheet->write($row, $col++, $activity->activity_value, $format_row_left);
+		if ($activity->page_order == 1){
+		$worksheet->write($row, $col++, $activity->display_name, $format_row_left);
+		}
+		$worksheet->writeString($row, $col++, $activity->activity_value);
+      //  $worksheet->write($row, $col++, $activity->activity_value, $format_row_left);
 		$worksheet->write($row, $col++, $activity->selfgrade, $format_row_left);
         if ($activity->page_order == 2)	{
 		$row++;
         $col =0;		
 		}	
-
-	}
+}
 //add the questions for the last row
 $row+=2;
 $worksheet->write($row, $col++, "QUESTIONS", $format_header_left);
@@ -321,6 +332,43 @@ $row++;
 $col=0;
 $worksheet->write($row, $col++, $aQuestions[1], $format_row_left);
 
+//now create the third worksheet with the LERN challenges and next steps
+$worksheet =&$workbook->addWorksheet('LERN Challenges and Next steps');
+//set up data
+$course_id =$_GET['lern_topic'];
+// set column widths
+    $worksheet->setColumn(1,1,20); // Name of User
+    $worksheet->setColumn(1,1,20); // Q1
+	$worksheet->setColumn(1,1,20); // Q1 Response
+	$worksheet->setColumn(1,1,20); // Q2
+	$worksheet->setColumn(1,1,20); // Q2 Response
+// build the header row
+	$col = 0;
+	$worksheet->write(1, $col++, "Name", $format_header_left);
+    $worksheet->write(1, $col++, "Q1 ", $format_header_left);
+	$worksheet->write(1, $col++, "Q1 Answer", $format_header_left);
+    $worksheet->write(1, $col++, "Q2 Answer", $format_header_left);
+	$worksheet->write(1, $col++, "Q2 Answer", $format_header_left);
+	$row = 2;
+	//get the answers from the activities table
+	$activities =$wpdb->get_results("select page_order, activity_value, description, display_name
+			from wp_course_activities a, wp_users u
+			where  a.user_id = u.id and post_id 
+			in (select unit_id from wp_wpcw_units_meta m, wp_posts p where p.ID = m.unit_id and parent_course_id = ". $course_id. " and post_title like '%reflect%')
+             and page_order  in (1,2)
+			order by user_id, page_order", OBJECT);
+$col =0;	
+	foreach ($activities as $activity){
+		if ($activity->page_order == 1){
+		$worksheet->write($row, $col++, $activity->display_name, $format_row_left);
+		}
+		$worksheet->write($row, $col++, $activity->description, $format_row_left);
+		$worksheet->writeString($row, $col++, $activity->activity_value);
+        if ($activity->page_order == 2)	{
+		$row++;
+        $col =0;		
+		}	
+}
 $workbook->send('lern_satisfaction_survey_results_'.date(YmdHis).'.xls');
 $workbook->close();
 header('Content-type: application/vnd.ms-excel');
@@ -329,7 +377,7 @@ echo $xls;
 
 
 }//end if satisfaction survey report list
-/*GET THE SATISFACTION SURVEY REPORT */
+
 //****************************************************************************************************************
 if($_GET['action'] == 'satisfaction_survey_report_download'){
 	global $wpdb;
@@ -593,7 +641,6 @@ header("Content-Disposition: attachment; filename=satisfaction_survey_data.xls")
 echo $xls;
 }//end if satisfaction survey report list
 //from a string of ids get the file paths and put them into a zip file
-/*GET THE ATTACHMENTS TO BBPRESS REPLIES FOR SELF STUDY */
 if ($_GET['action'] == 'zip_attachments_from_replies'){
 $fileIDs= $_GET['attachments'];
 $aFileIDs = explode(",", $fileIDs);
@@ -640,7 +687,6 @@ ob_end_flush();
 unlink($filepath.$filename);
 
 }
-/*GET THE ATTACHMENTS TO BBPRESS REPLIES FOR SELF STUDY */
 if ($_POST['action'] == 'get_attachments_for_replies'){
 //get the child posts (topics) for the forum into an array
 $args = array(
@@ -699,7 +745,7 @@ $returnvars = array(
           );
 print json_encode($returnvars);
 }//end function
-//mo satisfaction survey report from courseware quizzes ---LOST THIS CONTRACT, THIS IS NO LONGER RELEVANT
+//mo satisfaction survey report from courseware quizzes
 if($_GET['action'] == 'mo_satisfaction_survey_report_download'){
 global $wpdb;
 set_include_path(get_include_path() . PATH_SEPARATOR . '/home/transcoalition/pear/php');
@@ -830,7 +876,7 @@ $workbook = new Spreadsheet_Excel_Writer();
 $workbook->send("SS_".$course_title.date(YmdHis).".xls");
 $workbook->close();	
 }
-/*QI SURVEY REPORT */
+
 //qi report
 else if($_GET['action'] == 'qi_report_download'){
 	global $wpdb;
@@ -1346,7 +1392,6 @@ $workbook = new Spreadsheet_Excel_Writer();
 $workbook->send("pptest_".$state."_".$course_title."_".date("m-d-Y-hiA").".xls");
 $workbook->close();
 }
-/*MODULE REPORT WITHOUT QUESTIONS */
 else if ($_GET['action'] == 'tc_report_download_quick'){
    global $wpdb;
 set_include_path(get_include_path() . PATH_SEPARATOR . '/home/transcoalition/pear/php');
@@ -1559,7 +1604,7 @@ $workbook = new Spreadsheet_Excel_Writer();
 $workbook->send("pptest_".$state."_".$course_title."_".date("m-d-Y-hiA").".xls");
 $workbook->close();
 }//end it is the quick version
-/*GET CLICKS THAT WE HAVE CAPTURED FROM LINK CLICKS */
+
 else if ($_GET['action'] =='tc_report_captured_clicks'){
 global $wpdb;
 $stateWhere ="";
@@ -1657,7 +1702,7 @@ $address=$wpdb->get_var("Select meta_value from wp_postmeta where meta_key='web_
 if ($address == ""){
 	$address="Not a simple link, nothing to look up.";
 }
-        $fromPage = str_replace('https://transitioncoalition.org/','',$item->from_page);
+        $fromPage = str_replace('http://transitioncoalition.org/','',$item->from_page);
 		$worksheet->write($row, $col++, $item->theTitle, $format_row_left);
 		$worksheet->write($row, $col++, $address, $format_row_left);
 		$worksheet->write($row, $col++, $fromPage, $format_row_left);
@@ -1681,7 +1726,7 @@ $rows2 = $wpdb->get_results("select distinct(post_title) as theTitle, guid, ID, 
       post_type='attachment' ". $dateWhere . $stateWhere . $inPostParentWhere .  " GROUP BY post_title, user_email order by clicked_link_id", OBJECT);
     foreach ($rows2 as $item){
 	//get the web address if we have one 
-			$fromPage = str_replace('https://transitioncoalition.org/','',$item->from_page);
+			$fromPage = str_replace('http://transitioncoalition.org/','',$item->from_page);
 			$worksheet->write($row, $col++, $item->theTitle, $format_row_left);
 			$worksheet->write($row, $col++, $item->guid, $format_row_left);
 			$worksheet->write($row, $col++, $fromPage, $format_row_left);
@@ -1696,7 +1741,6 @@ $rows2 = $wpdb->get_results("select distinct(post_title) as theTitle, guid, ID, 
 $workbook->send('clickedOnData_'.date(YmdHis).'.xls');
 $workbook->close();	
 } //end that it is a downloads counter
-/*GET THE USERS THAT ARE ENROLLED IN A LERN COURSE */
 else if ($_GET['action'] == 'tc_report_lern_enrollment'){
 global $wpdb;
 $lerntopic=$_GET['lern_topic'];
@@ -1788,212 +1832,6 @@ $col=0;
 $workbook->send('lernEnrollment_'.date(YmdHis).'.xls');
 $workbook->close();	
 }
-/*DUPLICATE A LERN MODULE --- SHOULD BE MOVED TO COURSE EXTRAS PLUGIN*/
-else if ($_POST['action'] == 'tc_report_lern_duplicate'){
-	global $wpdb;
-	$courseID= $_POST['lern_topic'];
-    $newCourseID = 0;
-	$aOriginalModules = array();
-	$aNewModules = array();
-	$aNewQuizPostIDs = array();
-	$courseRow = $wpdb->get_row("Select * from wp_wpcw_courses where course_id =" . $courseID, OBJECT);
-	$slug_addon = date('z');
-    $wpdb->insert( 
-	'wp_wpcw_courses', 
-	array( 
-		'course_title' =>  $courseRow->course_title ." duplicate",
-		'course_desc'   => $courseRow->course_desc,
-		'course_opt_completion_wall' => $courseRow->course_opt_completion_wall,
-		'course_opt_use_certificate' => $courseRow->course_opt_use_certificate,
-		'course_opt_user_access' => 'default_hide',
-		'course_unit_count' => $courseRow->course_unit_count,
-		'course_from_name' => $courseRow->course_from_name,
-		'course_from_email' => $courseRow->course_from_email,
-		'course_to_email' => $courseRow->course_to_email,
-		'course_message_unit_complete' => $courseRow->course_message_unit_complete,
-		'course_message_course_complete' => $courseRow->course_message_course_complete,
-		'course_message_unit_not_logged_in' => $courseRow->course_message_unit_not_logged_in,
-		'course_message_unit_pending' => $courseRow->course_message_unit_pending,
-		'course_message_unit_no_access' => $courseRow->course_message_unit_no_access,
-		'course_message_unit_not_yet' => $courseRow->course_message_unit_not_yet,
-		'course_message_quiz_open_grading_blocking' => $courseRow->course_message_quiz_open_grading_blocking,
-		'course_message_quiz_open_grading_non_blocking' => $courseRow->course_message_quiz_open_grading_non_blocking,
-		'email_complete_module_option_admin' => $courseRow->email_complete_module_option_admin,
-		'email_complete_module_option' => $courseRow->email_complete_module_option,
-		'email_complete_module_subject' => $courseRow->email_complete_module_subject,
-		'email_complete_module_body' => $courseRow->email_complete_module_body,
-		'email_complete_course_option_admin' => $courseRow->email_complete_course_option_admin,
-		'email_complete_course_option' => $courseRow->email_complete_course_option,
-		'email_complete_course_subject' => $courseRow->email_complete_course_subject,
-		'email_complete_course_body' => $courseRow->email_complete_course_body,
-		'email_quiz_grade_option' => $courseRow->email_quiz_grade_option,
-		'email_quiz_grade_subject' => $courseRow->email_quiz_grade_subject,
-		'email_quiz_grade_body' => $courseRow->email_quiz_grade_body,
-		'email_complete_course_grade_summary_subject' => $courseRow->email_complete_course_grade_summary_subject,
-		'email_complete_course_grade_summary_body' => $courseRow->email_complete_course_grade_summary_body,
-	        ), 
-	array( 
-		'%s', 
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%d',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',
-		'%s',		
-		) 
-	);
-$newCourseID = $wpdb->insert_id;
-//select the modules and create new ones,save the module_ids into aOriginalModules aNewModules
-$rows = $wpdb->get_results("select * from wp_wpcw_modules where parent_course_id =". $courseID, OBJECT);
-$i = 0 ;
-foreach ($rows as $item){
-$aOriginalModules[$i] = $item->module_id;
-//do and insert and save the new module id
-$wpdb->insert( 
-	'wp_wpcw_modules', 
-	array( 
-		'parent_course_id' => $newCourseID,
-		'module_title'   => $item->module_title,
-		'module_desc' => $item->module_desc,
-		'module_order' => $item->module_order,
-		'module_number' => $item->module_number,
-),
-       array( 
-		'%d',
-		'%s',
-		'%s',
-		'%d',
-		'%d',
-)
-);
-$newModuleID = $wpdb->insert_id;
-$aNewModules[$i] = $newModuleID;
-$i++;
-}
-
-//this does not handle units and quizzes
-//************************************************************ now handle all the other post units that are not quizzes
-//get the units that are not associated with quizzez
-$posts = $wpdb->get_results("select * from wp_posts where id  in (Select unit_id from wp_wpcw_units_meta where parent_course_id =". $courseID.") and post_status='publish'", OBJECT);
-//foreach one create a new post
-$i = 0;
-foreach ($posts as $item){
-$originalPostID =  $item->ID;
-	// Create post object
-	$my_post = array(
-	  'post_title'            => $item->post_title,
-	  'post_status'           => $item->post_status,
-	  'post_type'             => $item->post_type,
-	  'post_author'           => $item->post_author, 
-	  'ping_status'           => $item->ping_status,
-	  'post_parent'           => $item->post_parent,
-	  'menu_order'            => $item->menu_order, 
-	  'to_ping'               => $item->to_ping ,
-	  'pinged'                => $item->pinged,   
-	  'post_password'         => $item->post_password, 
-	  'guid'                  => $item-> guid,
-	  'post_content'          => $item->post_content, 
-          'comment_status'    => $item->comment_status, 	  
-          'post_name'         => $item->post_name."-".$slug_addon, 
-	  'post_excerpt'          => $item-> post_excerpt ,  
-	  'import_id'             => $item-> import_id ,
-	  'post_category'         =>  array(476),
-	);
-	// Insert the post into the database
-	$inserted_post_id = wp_insert_post( $my_post );
-	//set a unique page slug
-	wp_unique_post_slug( $item->post_name."-".$slug_addon, $inserted_post_id, $item->ping_status, $item->post_type, 0 );
-       //add the meta record that goes with it.
-		$postmetarows = $wpdb->get_results("Select * from wp_postmeta where post_id =" . $item->ID, OBJECT);
-		foreach ($postmetarows as $item){
-		$wpdb->insert( 
-				'wp_postmeta', 
-			array( 
-				'post_id' => $inserted_post_id ,
-				'meta_key'   => $item->meta_key,
-				'meta_value' => $item->meta_value,
-		),
-		       array( 
-				'%d',
-				'%s',
-				'%s',		
-		)
-		);
-		}
-$aNewPostIDs[$i] = $inserted_post_id;
-$i++;
-//associate the units with the correct course and module
-$unitmeta=$wpdb->get_row("select * from wp_wpcw_units_meta where unit_id = ".$originalPostID);
-//get the correct new module to use for the insert
-for ($i=0; $i< count($aOriginalModules); $i++){
-	if ($unitmeta->parent_module_id == $aOriginalModules[$i]){
-        $moduleIDtouse = $aNewModules[$i];
-	}
-}
-	//now insert a new unit meta record
-        $unitmetaresult = $wpdb->insert( 
-		'wp_wpcw_units_meta', 
-		   array( 
-		    'unit_id' => $inserted_post_id,
-			'parent_module_id' => $moduleIDtouse,
-			'parent_course_id' => $newCourseID,
-			'unit_order' => $unitmeta->unit_order,
-			'unit_number' => $unitmeta->unit_number,
-                ),
-		       array( 
-				'%d',
-				'%d',
-				'%d',
-				'%d',
-				'%d',
-		)
-		);
-//update the associated module key on wp_postmeta
-update_post_meta($inserted_post_id, 'wpcw_associated_module', $moduleIDtouse); 
-}
-//select the course extras
-$extras = $wpdb->get_results("Select * from wp_wpcw_course_extras where course_id =". $courseID, OBJECT);
-foreach ($extras as $extra){
-$inserted = $wpdb->query("INSERT INTO `wp_wpcw_course_extras` 
-( `course_id`, `course_logo_path`, `course_start_page_path`, `course_type`, `post_test_id`, `national_module`, `course_intro_page_path`, `enrollment_key`, `coach_id`, `start_date`, `study_guide_path`, `max_enrolled`, `wid`, `entry_id`) 
-VALUES ( '".$newCourseID."', '".$extra->course_logo_path."', '', 'LERN', '', '', '', NULL, '', '0000-00-00 00:00:00', '', NULL, '', '')");
-}
-if ($newCourseID >0){
-$success = 1;
-}
-else{
-$success = 0;
-}
-$returnvars = array(
-			"success" =>$success,
-		   );
-print json_encode($returnvars);
-exit;
-}	
-/*GET THE LERN WAITING LIST */
 else if ($_GET['action'] == 'tc_report_lern_waitlist'){
 global $wpdb;
 $lerntopic=$_GET['lern_topic'];

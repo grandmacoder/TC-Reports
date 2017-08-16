@@ -17,12 +17,12 @@ include "transcoal-prepost-test.php";
 include "transcoal-prepost-test-quick.php";
 include "transcoal-qi-survey-list.php";
 include "transcoal-satisfaction-survey.php";
-include "transcoal-lern-satisfaction-survey.php";
 include "transcoal-mo-satisfaction-survey.php";
 include "transcoal-capture_clicks.php";
 include "transcoal-file-attachments.php";
 include "transcoal-lern.php";
 include "transcoal-lern-waitlist.php";
+include "transcoal-lern-duplicate.php";
 if(is_admin())
 {
     new TC_Reports_table();
@@ -51,7 +51,6 @@ class TC_Reports_table{
 			//add_submenu_page( 'tc-reports', 'QI survey', 'QI survey', 'manage_options', 'tc-reports', 'add_qi_survey_page' );
 			add_submenu_page( 'tc-reports', 'QI Survey', 'QI Survey', 'manage_options', 'tc-qi-report', 'add_qi_survey_list' );	
 			add_submenu_page( 'tc-reports', 'Satisfaction Survey', 'Satisfaction Survey', 'manage_options', 'tc-satisfaction-report', 'add_satisfaction_survey_list' );	
-			add_submenu_page( 'tc-reports', 'LERN Satisfaction Survey', 'LERN Satisfaction Survey', 'manage_options', 'tc-lern-satisfaction-report', 'add_lern_satisfaction_survey_list' );
 			add_submenu_page( 'tc-reports', 'Mo Satisfaction Survey', 'Mo Satisfaction Survey', 'manage_options', 'tc-mo-satisfaction-report', 'add_mo_satisfaction_survey_list' );	
 			add_submenu_page( 'tc-reports', 'Pre/Post test', 'Pre/Post test', 'manage_options', 'tc-test-report', 'add_pre_post_test' );
 			add_submenu_page( 'tc-reports', 'Quick Pre/Post test', 'Quick Pre/Post test', 'manage_options', 'tc-test-report-quick', 'add_pre_post_test_quick' );
@@ -59,7 +58,7 @@ class TC_Reports_table{
             add_submenu_page( 'tc-reports', 'File Attachments', 'File Attachments', 'manage_options', 'tc-file-attachments', 'add_tc_file_attachments' );	
 			add_submenu_page( 'tc-reports', 'LERN Enrollment', 'LERN Enrollment', 'manage_options', 'tc-lern-enrollment', 'tc_lern_enrollment' );
 			add_submenu_page( 'tc-reports', 'LERN Waiting List', 'LERN Waiting List', 'manage_options', 'tc-lern-waitlist', 'tc_lern_waitlist' );
-			//add_submenu_page( 'tc-reports', 'LERN Waiting List', 'LERN Waiting List', 'manage_options', 'tc-lern-waitinglist', 'tc_lern_waitinglist' );			
+			add_submenu_page( 'tc-reports', 'Duplicate a LERN', 'Duplicate a LERN', 'manage_options', 'tc-lern-duplicate', 'tc_lern_duplicate' );			
 			add_action('admin_init', array($this,'my_plugin_admin_scripts'));
 		}
 		

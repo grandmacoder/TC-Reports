@@ -16,9 +16,9 @@ if(!current_user_can('manage_options')){
 	<form name="qiSurveyList" id="qiSurveyList">
 	<span style="font-size: 16px; padding-right: 92px;"> <b>QI Version</b> </span>
 	<select name="qi_quizid" id="qi_quizid">
-	<option value="32" >QI version 2.1 (scores 1-4)</option>
 	<option value="5">QI version 2 (scores 0-3)</option>
-	</select><br>
+	<option value="32" >QI version 2.1 (scores 1-4)</option>
+    </select><br>
 	
 <span style="font-size: 16px; padding-right: 92px;"> <b>State:</b> </span>
 	<select name="qi_survey_state" id="qi_survey_state">
@@ -97,7 +97,6 @@ if(!current_user_can('manage_options')){
 		}
 		?>
 		</select><br>
-<p><strong>Start Date needs to be after Aug. 14, 2016 for QI scores 1-4.</strong></p>
 <span style="font-size: 16px; padding-right: 53px;"> <b>Start Date:</b> </span>	
  <input type="text" class="custom_date" name="start_date" /><br>
  <span style="font-size: 16px; padding-right: 62px;"> <b>End Date:</b> </span>	

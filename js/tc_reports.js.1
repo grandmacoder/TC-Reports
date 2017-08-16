@@ -1,0 +1,107 @@
+/*
+	tc_reports.js
+	
+	License: GNU General Public License v3.0
+	License URI: http://www.gnu.org/licenses/gpl-3.0.html
+	
+*/
+jQuery(document).ready(function($) {
+
+var current_page = $(location).attr('href');
+var baseURL = window.location.protocol+"//"+window.location.host;
+//qi filter by state 
+$('#qi_table_state').change(function(){
+
+	var selected = $('#qi_table_state').val();
+
+	
+	if(selected != ""){
+		if(selected == "All"){
+			window.location.search = "page=tc-reports";
+		}else{
+	
+		window.location.search = "page=tc-reports&filterState="+selected;
+		}
+	}
+	
+});
+//custom date picker
+$('.custom_date').datepicker({
+dateFormat : 'yy-mm-dd',
+minDate: new Date(2015,06,17) 
+});
+
+$("#btnsubmitprepost" ).click(function(event) {
+    event.preventDefault();
+	var startdate = new Date($("input[name='start_date']").val());
+	var enddate = new  Date($("input[name='end_date']").val());
+	var module = $("#module_list_data").val();
+	var state = $("#pre_post_state").val();
+    if(startdate > enddate){
+		$( "#messageareaprepost" ).html( "<p style='color:red;font-weight:bold;'>Start Date is not correct. Please choose a start date before end date.</p>" );
+	}else{
+		$( "#messageareaprepost" ).html( "<p style='color:green;font-weight:bold;'>Your file will download momentarily.</p>" );
+		var baseURL = window.location.protocol+"//"+window.location.host
+		var pluginAjaxURL = baseURL +'/wp-content/plugins/transcoal-reports/tc_reports_ajax.php';
+		var data = $( "#PrePostTest" ).serialize();
+		data=data+'&action=tc_report_download';
+		window.open(pluginAjaxURL+'/?'+data,'_blank' );
+
+		
+	}
+});
+
+$("#btnsubmitprepostquick" ).click(function(event) {
+	event.preventDefault();
+	var startdate = new Date($("input[name='start_date']").val());
+	var enddate = new  Date($("input[name='end_date']").val());
+	var module = $("#module_list_data").val();
+	var state = $("#pre_post_state").val();
+    if(startdate > enddate){
+		$( "#messageareaprepost" ).html( "<p style='color:red;font-weight:bold;'>Start Date is not correct. Please choose a start date before end date.</p>" );
+	}else{
+		$( "#messageareaprepost" ).html( "<p style='color:green;font-weight:bold;'>Your file will download momentarily.</p>" );
+		var baseURL = window.location.protocol+"//"+window.location.host
+		var pluginAjaxURL = baseURL +'/wp-content/plugins/transcoal-reports/tc_reports_ajax.php';
+		var data = $("#PrePostTestQuick").serialize();
+		data=data+'&action=tc_report_download_quick';
+		window.open(pluginAjaxURL+'/?'+data,'_blank' );
+    }
+});
+$("#btnsubmitcaptureclicks" ).click(function(event) {
+	event.preventDefault();
+	var startdate = new Date($("input[name='start_date']").val());
+	var enddate = new  Date($("input[name='end_date']").val());
+	var state = $("#pre_post_state").val();
+    if (startdate > enddate){
+		$( "#messageareaprepost" ).html( "<p style='color:red;font-weight:bold;'>Start Date is not correct. Please choose a start date before end date.</p>" );
+	}else{
+		$( "#messageareaprepost" ).html( "<p style='color:green;font-weight:bold;'>Your file will download momentarily.</p>" );
+		var baseURL = window.location.protocol+"//"+window.location.host
+		var pluginAjaxURL = baseURL +'/wp-content/plugins/transcoal-reports/tc_reports_ajax.php';
+		var data = $("#CapturedLinkClicks").serialize();
+		data=data+'&action=tc_report_captured_clicks';
+		console.log(pluginAjaxURL+'/?'+data);
+		window.open(pluginAjaxURL+'/?'+data,'_blank' );
+    }
+});
+
+
+$("#btn_submit_qisurvey" ).click(function(event) {
+	event.preventDefault();
+	var startdate = new Date($("input[name='start_date']").val());
+	var enddate = new  Date($("input[name='end_date']").val());
+	var state = $("#qi_survey_state").val();
+	var qi_instance = $("qi_survey_instance").val();
+    if(startdate > enddate){
+		$( "#messageareaprepost" ).html( "<p style='color:red;font-weight:bold;'>Start Date is not correct. Please choose a start date before end date.</p>" );
+	}else{
+		$( "#messageareaprepost" ).html( "<p style='color:green;font-weight:bold;'>Your file will download momentarily.</p>" );
+		var baseURL = window.location.protocol+"//"+window.location.host
+		var pluginAjaxURL = baseURL +'/wp-content/plugins/transcoal-reports/tc_reports_ajax.php';
+		var data = $( "#qiSurveyList" ).serialize();
+		data=data+'&action=qi_report_download';
+        window.open(pluginAjaxURL+'/?'+data,'_blank' );
+    }
+});
+});
